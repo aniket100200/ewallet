@@ -1,25 +1,12 @@
 services:
-  eureka-server:
-    build: ./eureka-server    # Changed from ./ewallet-services/eureka-server
-    ports:
-      - "8761:8761"
-
-  user-service:
-    build: ./user-services    # Changed from ./ewallet-services/user-services
-    ports:
-      - "8081:8081"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/userDb
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-    depends_on:
-      - mysql-db
-      - eureka-server
-
-  # Use the images you already have in your screenshot
+  # ==========================================
+  # INFRASTRUCTURE SERVICES
+  # ==========================================
   mysql-db:
     image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Kolkata
     ports:
       - "3306:3306"
 
@@ -32,3 +19,69 @@ services:
     image: apache/kafka:latest
     ports:
       - "9092:9092"
+
+  # ==========================================
+  # DISCOVERY SERVER
+  # ==========================================
+  eureka-server:
+    build: ./eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - TZ=Asia/Kolkata
+      - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+
+  # ==========================================
+  # MICROSERVICES
+  # ==========================================
+  user-service:
+    build: ./user-services
+    ports:
+      - "8076:8076"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/userDB?createDatabaseIfNotExist=true
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - TZ=Asia/Kolkata
+      - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+    depends_on:
+      - mysql-db
+      - eureka-server
+
+  wallet-service:
+    build: ./wallet-services
+    ports:
+      - "6000:6000"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/walletDb?createDatabaseIfNotExist=true
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - TZ=Asia/Kolkata
+      - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+    depends_on:
+      - mysql-db
+      - eureka-server
+
+  transaction-service:
+    build: ./transaction-services
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/transactionDb?createDatabaseIfNotExist=true
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - TZ=Asia/Kolkata
+      - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+    depends_on:
+      - mysql-db
+      - eureka-server
+
+  notification-service:
+    build: ./notifications-service
+    ports:
+      - "9002:9002"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/emailDb?createDatabaseIfNotExist=true
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - TZ=Asia/Kolkata
+      - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+    depends_on:
+      - mysql-db
+      - eureka-server
