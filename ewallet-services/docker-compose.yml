@@ -1,15 +1,15 @@
 services:
   eureka-server:
-    build: ./ewallet-services/eureka-server
+    build: ./eureka-server    # Changed from ./ewallet-services/eureka-server
     ports:
       - "8761:8761"
 
   user-service:
-    build: ./ewallet-services/user-services
+    build: ./user-services    # Changed from ./ewallet-services/user-services
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/user_db
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/userDb
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mysql-db
