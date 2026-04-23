@@ -1,6 +1,7 @@
 package com.example.majorproject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,6 +12,7 @@ import java.time.Duration;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class UserService {
 
     @Autowired
@@ -36,7 +38,10 @@ public class UserService {
                 .userName(userRequest.getUserName())
                 .build();
 
-        userRepository.save(user);
+        try{
+            userRepository.save(user);
+        }catch (Exception t){
+        }
         saveInCache(user);
 
         // kafka

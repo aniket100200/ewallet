@@ -9,11 +9,10 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@Table(name = "t_users")
 @Builder
 public class User implements Serializable {
 
