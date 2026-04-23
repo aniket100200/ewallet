@@ -8,7 +8,7 @@ import javax.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "t_transactions")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

@@ -9,7 +9,7 @@ import javax.persistence.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "wallets")
+@Table(name = "t_wallets")
 public class Wallet{
 
     @Id

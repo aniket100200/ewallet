@@ -60,6 +60,7 @@ public class TransactionService {
 
     @KafkaListener(topics={"update_transaction"},groupId="avengers")
     public void updateTransaction(String message) throws JsonProcessingException {
+
         JSONObject transactionRequest = objectMapper.readValue(message, JSONObject.class);
 
         String status = (String) transactionRequest.get("status");
@@ -67,7 +68,7 @@ public class TransactionService {
 
         Transaction transaction = transactionRepository.findByTransactionId(transactionid);
 
-        if(status=="SUCCESS")
+        if("SUCCESS".equalsIgnoreCase(status))
         transaction.setStatus(TransactionStatus.SUCCESS);
         else transaction.setStatus(TransactionStatus.FAILED);
 
@@ -78,16 +79,19 @@ public class TransactionService {
 
     public void callNotificationService(Transaction transaction){
 
+        // Use the Service ID registered in Eureka instead of localhost:8076
+        String userServiceUrl = "http://USER-SERVICE/user?userName=";
+
         String fromUser = transaction.getFromUser();
         String toUser = transaction.getToUser();
 
-        URI url = URI.create("http://localhost:8076/user?userName="+fromUser);
+        URI url = URI.create(userServiceUrl+fromUser);
         HttpEntity httpEntity = new HttpEntity(new HttpHeaders());
         JSONObject sender = restTemplate.exchange(url, HttpMethod.GET,httpEntity, JSONObject.class).getBody();
         String senderName = (String) sender.get("name");
         String senderEmail = (String) sender.get("email");
 
-        url = URI.create("http://localhost:8076/user?userName="+toUser);
+        url = URI.create(userServiceUrl+toUser);
         JSONObject receiver = restTemplate.exchange(url, HttpMethod.GET,httpEntity, JSONObject.class).getBody();
         String receiverName = (String) receiver.get("name");
         String receiverEmail = (String) receiver.get("email");
