@@ -43,6 +43,7 @@ services:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - TZ=Asia/Kolkata
       - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+      - SPRING_REDIS_HOST=my-local-redis
     depends_on:
       - mysql-db
       - eureka-server
