@@ -9,6 +9,7 @@
 		<module>transaction-services</module>
         <module>notifications-service</module>
         <module>eureka-server</module>
+        <module>api-gateway</module>
     </modules>
 	<parent>
 		<groupId>org.springframework.boot</groupId>

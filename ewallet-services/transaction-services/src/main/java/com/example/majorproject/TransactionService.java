@@ -80,7 +80,7 @@ public class TransactionService {
     public void callNotificationService(Transaction transaction){
 
         // Use the Service ID registered in Eureka instead of localhost:8076
-        String userServiceUrl = "http://USER-SERVICE/user?userName=";
+        String userServiceUrl = "http://USER-SERVICE/user/get?userName=";
 
         String fromUser = transaction.getFromUser();
         String toUser = transaction.getToUser();
