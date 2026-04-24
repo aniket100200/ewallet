@@ -51,11 +51,11 @@ public class WalletService {
         if(balance>=amount){
             // Paisa hi paisa
             Wallet fromWallet = walletRepository.findByUserName(fromUser);
-            fromWallet.setBalance(balance - amount);
+            fromWallet.setBalance(fromWallet.getBalance() - amount);
             walletRepository.save(fromWallet);
 
             Wallet toWallet = walletRepository.findByUserName(toUser);
-            toWallet.setBalance(balance + amount);
+            toWallet.setBalance(toWallet.getBalance() + amount);
             walletRepository.save(toWallet);
 
             transactionObject.put("status","SUCCESS");
