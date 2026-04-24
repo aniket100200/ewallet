@@ -4,38 +4,51 @@ services:
   # ==========================================
   mysql-db:
     image: mysql:latest
+    container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: root
       TZ: Asia/Kolkata
     ports:
       - "3306:3306"
+    networks:
+      - ewallet-network
 
   my-local-redis:
     image: redis
+    container_name: my-local-redis
     ports:
       - "6379:6379"
+    networks:
+      - ewallet-network
 
   kafka:
     image: apache/kafka:latest
+    container_name: kafka
     ports:
       - "9092:9092"
+    networks:
+      - ewallet-network
 
   # ==========================================
   # DISCOVERY SERVER
   # ==========================================
   eureka-server:
     build: ./eureka-server
+    container_name: eureka-server
     ports:
       - "8761:8761"
     environment:
       - TZ=Asia/Kolkata
       - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+    networks:
+      - ewallet-network
 
   # ==========================================
   # MICROSERVICES
   # ==========================================
   user-service:
     build: ./user-services
+    container_name: user-service
     ports:
       - "8076:8076"
     environment:
@@ -47,9 +60,12 @@ services:
     depends_on:
       - mysql-db
       - eureka-server
+    networks:
+      - ewallet-network
 
   wallet-service:
     build: ./wallet-services
+    container_name: wallet-service
     ports:
       - "6000:6000"
     environment:
@@ -60,9 +76,12 @@ services:
     depends_on:
       - mysql-db
       - eureka-server
+    networks:
+      - ewallet-network
 
   transaction-service:
     build: ./transaction-services
+    container_name: transaction-service
     ports:
       - "8081:8081"
     environment:
@@ -73,9 +92,12 @@ services:
     depends_on:
       - mysql-db
       - eureka-server
+    networks:
+      - ewallet-network
 
   notification-service:
     build: ./notifications-service
+    container_name: notification-service
     ports:
       - "9002:9002"
     environment:
@@ -86,3 +108,26 @@ services:
     depends_on:
       - mysql-db
       - eureka-server
+    networks:
+      - ewallet-network
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - TZ=Asia/Kolkata
+      - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+    depends_on:
+      - eureka-server
+    networks:
+      - ewallet-network
+
+# ==========================================
+# NETWORK DEFINITION (THE FIX)
+# ==========================================
+networks:
+  ewallet-network:
+    driver: bridge
