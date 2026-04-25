@@ -2,6 +2,8 @@ package com.example.majorproject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -13,11 +15,13 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Date;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class TransactionService {
 
@@ -32,6 +36,8 @@ public class TransactionService {
 
     @Autowired
     RestTemplate restTemplate;
+
+    private final String USER_SERVICE_URL="http://USER-SERVICE/user";
 
     public void createTransaction(TransactionRequest transactionRequest){
 
@@ -79,27 +85,21 @@ public class TransactionService {
 
     public void callNotificationService(Transaction transaction){
 
-        // Use the Service ID registered in Eureka instead of localhost:8076
-        String userServiceUrl = "http://USER-SERVICE/user/get?userName=";
+        //let's find the Sender User
+        JSONObject sender =  getUserByUserName(transaction.getFromUser());
 
-        String fromUser = transaction.getFromUser();
-        String toUser = transaction.getToUser();
-
-        URI url = URI.create(userServiceUrl+fromUser);
-        HttpEntity httpEntity = new HttpEntity(new HttpHeaders());
-        JSONObject sender = restTemplate.exchange(url, HttpMethod.GET,httpEntity, JSONObject.class).getBody();
         String senderName = (String) sender.get("name");
         String senderEmail = (String) sender.get("email");
 
-        url = URI.create(userServiceUrl+toUser);
-        JSONObject receiver = restTemplate.exchange(url, HttpMethod.GET,httpEntity, JSONObject.class).getBody();
+        //let's find the receiver User
+        JSONObject receiver = getUserByUserName(transaction.getToUser());
         String receiverName = (String) receiver.get("name");
         String receiverEmail = (String) receiver.get("email");
 
         // kafka
         JSONObject senderEmailRequest = new JSONObject();
         senderEmailRequest.put("email",senderEmail);
-        String senderMessage = String.format("Hi %s. Your transaction with transactionId %s to %s of amount %d is in %s status.",senderName,transaction.getTransactionId(),receiverName,transaction.getAmount(),transaction.getStatus());
+        String senderMessage = String.format("Hi %s. Your transaction with transactionId %s to %s of amount Rs. %d is in %s status.",senderName,transaction.getTransactionId(),receiverName,transaction.getAmount(),transaction.getStatus());
         senderEmailRequest.put("message",senderMessage);
         String message = senderEmailRequest.toString();
         kafkaTemplate.send("send_email",message);
@@ -109,9 +109,38 @@ public class TransactionService {
 
         JSONObject receiverEmailRequest = new JSONObject();
         receiverEmailRequest.put("email",receiverEmail);
-        String receiverMessage = String.format("Hi %s. You have received %d rupees from %s",receiverName,transaction.getAmount(),senderName);
+        String receiverMessage = String.format("Hi %s. You have received Rs.%d from %s",receiverName,transaction.getAmount(),senderName);
         receiverEmailRequest.put("message",receiverMessage);
         message = receiverEmailRequest.toString();
         kafkaTemplate.send("send_email",message);
+    }
+
+
+    @CircuitBreaker(name = "userService",fallbackMethod = "userFallback")
+    public JSONObject getUserByUserName(String username){
+
+        // Use the Service ID registered in Eureka instead of localhost:8076
+       String url= UriComponentsBuilder.fromHttpUrl(USER_SERVICE_URL+"/get")
+               .queryParam("userName",username)
+               .toUriString();
+
+        HttpEntity httpEntity = new HttpEntity(new HttpHeaders());
+        JSONObject user = restTemplate.exchange(url, HttpMethod.GET,httpEntity, JSONObject.class).getBody();
+        return user;
+
+    }
+
+    public JSONObject userFallback(String username,Throwable throwable){
+        log.warn("⚠️ User Service is down! Fallback triggered for: {}" , username);
+        log.warn("Reason: {}",throwable.getMessage());
+
+        // Better than returning null: Return an empty object or an error object
+        // so the calling method doesn't throw a NullPointerException.
+        JSONObject fallbackUser = new JSONObject();
+        fallbackUser.put("error", "Service Unavailable");
+        fallbackUser.put("userName", username);
+        fallbackUser.put("status", "FALLBACK");
+
+        return fallbackUser;
     }
 }

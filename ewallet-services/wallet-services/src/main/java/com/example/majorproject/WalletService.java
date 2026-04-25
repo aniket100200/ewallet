@@ -28,7 +28,7 @@ public class WalletService {
 
         Wallet wallet = Wallet.builder().
                 userName(userName).
-                balance(2000).
+                balance(100000).
                 build();
 
         walletRepository.save(wallet);
