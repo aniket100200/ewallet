@@ -43,7 +43,7 @@ services:
       - ewallet-network
 
   # ==========================================
-  # DISCOVERY SERVER
+  # DISCOVERY & CONFIG SERVERS
   # ==========================================
   eureka-server:
     build: ./eureka-server
@@ -56,8 +56,22 @@ services:
     networks:
       - ewallet-network
 
+  # ---> ADDED CONFIG SERVER <---
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - TZ=Asia/Kolkata
+      - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+    depends_on:
+      - eureka-server
+    networks:
+      - ewallet-network
+
   # ==========================================
-  # MICROSERVICES
+  # MICROSERVICES (Now entirely Config-Driven)
   # ==========================================
   user-service:
     build: ./user-services
@@ -66,16 +80,13 @@ services:
     ports:
       - "8076:8076"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/userDb?createDatabaseIfNotExist=true
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092 # ADDED
       - TZ=Asia/Kolkata
       - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
-      - SPRING_REDIS_HOST=my-local-redis
     depends_on:
       - mysql-db
       - eureka-server
-      - kafka # ADDED
+      - config-server # Must wait for config to load
+      - kafka
       - my-local-redis
     networks:
       - ewallet-network
@@ -87,15 +98,13 @@ services:
     ports:
       - "6000:6000"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/walletDb?createDatabaseIfNotExist=true
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092 # ADDED
       - TZ=Asia/Kolkata
       - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
     depends_on:
       - mysql-db
       - eureka-server
-      - kafka # ADDED
+      - config-server
+      - kafka
       - my-local-redis
     networks:
       - ewallet-network
@@ -107,15 +116,13 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/transactionDb?createDatabaseIfNotExist=true
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092 # ADDED
       - TZ=Asia/Kolkata
       - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
     depends_on:
       - mysql-db
       - eureka-server
-      - kafka # ADDED
+      - config-server
+      - kafka
       - my-local-redis
     networks:
       - ewallet-network
@@ -127,15 +134,13 @@ services:
     ports:
       - "9002:9002"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/emailDb?createDatabaseIfNotExist=true
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092 # ADDED
       - TZ=Asia/Kolkata
       - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
     depends_on:
       - mysql-db
       - eureka-server
-      - kafka # ADDED
+      - config-server
+      - kafka
       - my-local-redis
     networks:
       - ewallet-network
@@ -146,17 +151,15 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - TZ=Asia/Kolkata
       - JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - eureka-server
+      - config-server
     networks:
       - ewallet-network
 
-# ==========================================
-# NETWORK DEFINITION (THE FIX)
-# ==========================================
 networks:
   ewallet-network:
     driver: bridge

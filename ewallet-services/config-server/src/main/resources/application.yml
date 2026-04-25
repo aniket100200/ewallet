@@ -1,0 +1,20 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          # 👇 THIS IS WHERE YOUR GITHUB LINK GOES 👇
+          uri: https://github.com/aniket100200/ewallet-configs.git
+
+          # Optional: Specify the branch if it's not 'main' or 'master'
+          default-label: main
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka/
