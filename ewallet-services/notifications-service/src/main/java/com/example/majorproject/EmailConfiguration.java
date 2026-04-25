@@ -25,6 +25,9 @@ public class EmailConfiguration {
     @Value("${spring.mail.password}")
     String password;
 
+    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
+    String kafkaBootstrapServers;
+
     @Bean
     public JavaMailSender getJavaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
@@ -53,7 +56,7 @@ public class EmailConfiguration {
         Properties properties = new Properties();
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringSerializer.class);
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,StringSerializer.class);
-        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,"localhost:9092");
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,kafkaBootstrapServers);
 
         return properties;
     }
